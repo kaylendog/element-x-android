@@ -22,6 +22,7 @@ import io.element.android.libraries.matrix.api.room.JoinedRoom
 import io.element.android.libraries.matrix.api.room.RoomInfo
 import io.element.android.libraries.matrix.api.room.RoomMembersState
 import io.element.android.libraries.matrix.api.room.RoomNotificationSettingsState
+import io.element.android.libraries.matrix.api.room.accountdata.RoomAccountDataEvent
 import io.element.android.libraries.matrix.api.room.history.RoomHistoryVisibility
 import io.element.android.libraries.matrix.api.room.join.JoinRule
 import io.element.android.libraries.matrix.api.room.knock.KnockRequest
@@ -38,6 +39,7 @@ import io.element.android.tests.testutils.simulateLongTask
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.test.TestScope
@@ -52,6 +54,7 @@ class FakeJoinedRoom(
     override val roomNotificationSettingsStateFlow: StateFlow<RoomNotificationSettingsState> =
         MutableStateFlow(RoomNotificationSettingsState.Unknown),
     override val knockRequestsFlow: Flow<List<KnockRequest>> = MutableStateFlow(emptyList()),
+    override val roomAccountDataFlow: Flow<RoomAccountDataEvent> = MutableSharedFlow(),
     private val roomNotificationSettingsService: FakeNotificationSettingsService = FakeNotificationSettingsService(),
     private var createTimelineResult: (CreateTimelineParams) -> Result<Timeline> = { lambdaError() },
     private val editMessageLambda: (EventId, String, String?, List<IntentionalMention>) -> Result<Unit> = { _, _, _, _ -> lambdaError() },

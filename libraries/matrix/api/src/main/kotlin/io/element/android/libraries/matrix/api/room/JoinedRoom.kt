@@ -13,6 +13,7 @@ import io.element.android.libraries.matrix.api.core.RoomAlias
 import io.element.android.libraries.matrix.api.core.SendHandle
 import io.element.android.libraries.matrix.api.core.UserId
 import io.element.android.libraries.matrix.api.encryption.identity.IdentityStateChange
+import io.element.android.libraries.matrix.api.room.accountdata.RoomAccountDataEvent
 import io.element.android.libraries.matrix.api.room.history.RoomHistoryVisibility
 import io.element.android.libraries.matrix.api.room.join.JoinRule
 import io.element.android.libraries.matrix.api.room.knock.KnockRequest
@@ -31,6 +32,7 @@ interface JoinedRoom : BaseRoom {
     val roomTypingMembersFlow: Flow<List<UserId>>
     val identityStateChangesFlow: Flow<List<IdentityStateChange>>
     val roomNotificationSettingsStateFlow: StateFlow<RoomNotificationSettingsState>
+    val roomAccountDataFlow: Flow<RoomAccountDataEvent>
 
     /**
      * The current knock requests in the room as a Flow.

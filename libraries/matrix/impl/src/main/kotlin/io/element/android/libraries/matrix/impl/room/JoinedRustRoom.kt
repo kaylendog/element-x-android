@@ -24,6 +24,7 @@ import io.element.android.libraries.matrix.api.room.BaseRoom
 import io.element.android.libraries.matrix.api.room.CreateTimelineParams
 import io.element.android.libraries.matrix.api.room.IntentionalMention
 import io.element.android.libraries.matrix.api.room.JoinedRoom
+import io.element.android.libraries.matrix.api.room.accountdata.RoomAccountDataEvent
 import io.element.android.libraries.matrix.api.room.RoomNotificationSettingsState
 import io.element.android.libraries.matrix.api.room.history.RoomHistoryVisibility
 import io.element.android.libraries.matrix.api.room.join.JoinRule
@@ -37,6 +38,7 @@ import io.element.android.libraries.matrix.api.widget.MatrixWidgetDriver
 import io.element.android.libraries.matrix.api.widget.MatrixWidgetSettings
 import io.element.android.libraries.matrix.impl.core.RustSendHandle
 import io.element.android.libraries.matrix.impl.mapper.map
+import io.element.android.libraries.matrix.impl.room.accountdata.map
 import io.element.android.libraries.matrix.impl.room.history.map
 import io.element.android.libraries.matrix.impl.room.join.map
 import io.element.android.libraries.matrix.impl.room.knock.RustKnockRequest
@@ -58,9 +60,13 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.withContext
+import org.matrix.rustcomponents.sdk.Client
 import org.matrix.rustcomponents.sdk.DateDividerMode
 import org.matrix.rustcomponents.sdk.IdentityStatusChangeListener
 import org.matrix.rustcomponents.sdk.KnockRequestsListener
+import org.matrix.rustcomponents.sdk.RoomAccountDataEvent as InnerRoomAccountDataEvent
+import org.matrix.rustcomponents.sdk.RoomAccountDataEventType as InnerRoomAccountDataEventType
+import org.matrix.rustcomponents.sdk.RoomAccountDataListener
 import org.matrix.rustcomponents.sdk.RoomMessageEventMessageType
 import org.matrix.rustcomponents.sdk.TimelineConfiguration
 import org.matrix.rustcomponents.sdk.TimelineFilter
@@ -79,6 +85,7 @@ import org.matrix.rustcomponents.sdk.KnockRequest as InnerKnockRequest
 import org.matrix.rustcomponents.sdk.Timeline as InnerTimeline
 
 class JoinedRustRoom(
+    private val innerClient: Client,
     private val baseRoom: RustBaseRoom,
     private val liveInnerTimeline: InnerTimeline,
     private val notificationSettingsService: NotificationSettingsService,
@@ -134,6 +141,45 @@ class JoinedRustRoom(
     }
 
     override val roomNotificationSettingsStateFlow = MutableStateFlow<RoomNotificationSettingsState>(RoomNotificationSettingsState.Unknown)
+
+    override val roomAccountDataFlow: Flow<RoomAccountDataEvent> = mxCallbackFlow {
+        innerClient.observeRoomAccountDataEvent(
+            this@JoinedRustRoom.roomId.value,
+            InnerRoomAccountDataEventType.FULLY_READ,
+            object : RoomAccountDataListener {
+                override fun onChange(event: InnerRoomAccountDataEvent, roomId: String) {
+                    channel.trySend(event.map())
+                }
+            }
+        )
+        innerClient.observeRoomAccountDataEvent(
+            this@JoinedRustRoom.roomId.value,
+            InnerRoomAccountDataEventType.MARKED_UNREAD,
+            object : RoomAccountDataListener {
+                override fun onChange(event: InnerRoomAccountDataEvent, roomId: String) {
+                    channel.trySend(event.map())
+                }
+            }
+        )
+        innerClient.observeRoomAccountDataEvent(
+            this@JoinedRustRoom.roomId.value,
+            InnerRoomAccountDataEventType.TAG,
+            object : RoomAccountDataListener {
+                override fun onChange(event: InnerRoomAccountDataEvent, roomId: String) {
+                    channel.trySend(event.map())
+                }
+            }
+        )
+        innerClient.observeRoomAccountDataEvent(
+            this@JoinedRustRoom.roomId.value,
+            InnerRoomAccountDataEventType.UNSTABLE_MARKED_UNREAD,
+            object : RoomAccountDataListener {
+                override fun onChange(event: InnerRoomAccountDataEvent, roomId: String) {
+                    channel.trySend(event.map())
+                }
+            }
+        )
+    }
 
     override val liveTimeline = liveInnerTimeline.map(mode = Timeline.Mode.Live) {
         syncUpdateFlow.value = systemClock.epochMillis()
